@@ -1,0 +1,22 @@
+{
+    "name": "opigno/docker-cli-upstream",
+    "authors": [
+        {
+            "name": "Yurii Boichenko",
+            "email": "yboichenko@connect-i.ch"
+        }
+    ],
+    "license": "GPL-2.0-or-later",
+    "minimum-stability": "dev",
+    "require": {},
+    "extra": {
+        "patches": {
+            "drupal/opigno_statistics": {
+                "Add Database-specific Date Handling in StatisticsController": "patches/opigno_statistics-database_compatibility_date_functions_support.patch"
+            },
+            "drupal/opigno_mobile_app": {
+                "Enhance database compatibility by adding support for MySQL and SQLite in date-time functions": "patches/opigno_mobile_app-add_db_support_to_statistics_controller.patch"
+            }
+        }
+    }
+}

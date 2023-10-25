@@ -1,0 +1,160 @@
+diff --git a/src/Form/DashboardForm.php b/src/Form/DashboardForm.php
+index d7ea510..c9dde91 100644
+--- a/src/Form/DashboardForm.php
++++ b/src/Form/DashboardForm.php
+@@ -137,7 +137,15 @@ class DashboardForm extends FormBase {
+ 
+     $query = $this->database
+       ->select('opigno_statistics_user_login', 'u');
+-    $query->addExpression('DAY(u.date)', 'hour');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DAY(u.date)", 'hour');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%d', u.date)", 'hour');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $query->addExpression('COUNT(DISTINCT u.uid)', 'count');
+ 
+     if ($lp_ids) {
+@@ -457,7 +465,15 @@ class DashboardForm extends FormBase {
+   public function buildForm(array $form, FormStateInterface $form_state) {
+     // Prepare the list of the available years.
+     $query = $this->database->select('opigno_learning_path_achievements', 'a');
+-    $query->addExpression('YEAR(a.registered)', 'year');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%Y')", 'year');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%Y', a.registered)", 'year');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $data = $query
+       ->groupBy('year')
+       ->orderBy('year', 'DESC')
+@@ -469,8 +485,23 @@ class DashboardForm extends FormBase {
+ 
+     // Prepare the list of months.
+     $query = $this->database->select('opigno_learning_path_achievements', 'a');
+-    $query->addExpression('MONTH(a.registered)', 'month');
+-    $query->addExpression('YEAR(a.registered)', 'year');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%m')", 'month');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%m', a.registered)", 'month');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%Y')", 'year');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%Y', a.registered)", 'year');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $data = $query
+       ->groupBy('month')
+       ->groupBy('year')
+diff --git a/src/Form/TrainingForm.php b/src/Form/TrainingForm.php
+index fbef13f..768f4d2 100644
+--- a/src/Form/TrainingForm.php
++++ b/src/Form/TrainingForm.php
+@@ -733,7 +733,15 @@ AND gc.gid = :gid",
+ 
+     // Prepare the list of available years.
+     $query = $this->database->select('opigno_learning_path_achievements', 'a');
+-    $query->addExpression('YEAR(a.registered)', 'year');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%Y')", 'year');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%Y', a.registered)", 'year');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $query->condition('a.gid', $lp_ids, 'IN');
+     $data = $query->groupBy('year')
+       ->orderBy('year', 'DESC')
+@@ -745,8 +753,22 @@ AND gc.gid = :gid",
+ 
+     // Prepare the list of months.
+     $query = $this->database->select('opigno_learning_path_achievements', 'a');
+-    $query->addExpression('MONTH(a.registered)', 'month');
+-    $query->addExpression('YEAR(a.registered)', 'year');
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%m')", 'month');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%m', a.registered)", 'month');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%Y')", 'year');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%Y', a.registered)", 'year');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $query->condition('a.gid', $lp_ids, 'IN');
+     $data = $query->groupBy('month')
+       ->groupBy('year')
+diff --git a/src/Services/UserStatisticsManager.php b/src/Services/UserStatisticsManager.php
+index 5d752e4..9f781dc 100644
+--- a/src/Services/UserStatisticsManager.php
++++ b/src/Services/UserStatisticsManager.php
+@@ -163,7 +163,8 @@ class UserStatisticsManager {
+     if ($days) {
+       $field = $status === 'completed' ? 'completed' : 'registered';
+       $timestamp = strtotime("tomorrow -$days days");
+-      $query->where("UNIX_TIMESTAMP(a.$field) >= :timestamp", [':timestamp' => $timestamp]);
++      $timestamp = date('Y-m-d H:i:s', $timestamp);
++      $query->where("a.$field >= :timestamp", [':timestamp' => $timestamp]);
+     }
+ 
+     $result = $query
+@@ -196,14 +197,23 @@ class UserStatisticsManager {
+     $field = $status === 'completed' ? 'completed' : 'registered';
+     // Need to display the current day in the chart.
+     $timestamp = strtotime("tomorrow -30 days");
++    $timestamp = date('Y-m-d H:i:s', $timestamp);
+ 
+     $query = $this->database->select('opigno_learning_path_achievements', 'a');
+     $query->join('groups', 'g', 'g.id = a.gid');
+-    $query->addExpression("WEEK(a.$field)", 'period');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("WEEK(a.$field)", 'period');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%W', a.$field)", 'period');
++    }
++    else {
++      $query->addExpression("EXTRACT(WEEK FROM a.$field)", 'period');
++    }
+     $query->addExpression('COUNT(DISTINCT a.gid)', 'count');
+     $query->condition('a.uid', $uid)
+       ->condition('a.status', $status);
+-    $query->where("UNIX_TIMESTAMP(a.$field) >= :timestamp", [':timestamp' => $timestamp]);
++    $query->where("a.$field >= :timestamp", [':timestamp' => $timestamp]);
+ 
+     $data = $query->groupBy('period')
+       ->execute()
+@@ -270,7 +280,8 @@ class UserStatisticsManager {
+       ->condition('a.status', 'completed');
+     if ($days) {
+       $timestamp = strtotime("-$days days");
+-      $query->where('UNIX_TIMESTAMP(a.completed) >= :timestamp', [':timestamp' => $timestamp]);
++      $timestamp = date('Y-m-d H:i:s', $timestamp);
++      $query->where('a.completed >= :timestamp', [':timestamp' => $timestamp]);
+     }
+ 
+     if ($count) {

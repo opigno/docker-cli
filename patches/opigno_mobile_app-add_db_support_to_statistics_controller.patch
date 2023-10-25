@@ -1,0 +1,38 @@
+diff --git a/src/Controller/StatisticsController.php b/src/Controller/StatisticsController.php
+index c4a796e..2015180 100644
+--- a/src/Controller/StatisticsController.php
++++ b/src/Controller/StatisticsController.php
+@@ -199,7 +199,15 @@ class StatisticsController extends ControllerBase {
+   public function getYears() {
+     $query = $this->database
+       ->select('opigno_learning_path_achievements', 'a');
+-    $query->addExpression('YEAR(a.registered)', 'year');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DATE_FORMAT(a.registered, '%Y')", 'year');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%Y', a.registered)", 'year');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $data = $query
+       ->groupBy('year')
+       ->orderBy('year', 'DESC')
+@@ -310,7 +318,15 @@ class StatisticsController extends ControllerBase {
+ 
+     $query = $this->database
+       ->select('opigno_statistics_user_login', 'u');
+-    $query->addExpression('DAY(u.date)', 'hour');
++    $database_type = $this->database->databaseType();
++    if ($database_type == 'mysql') {
++      $query->addExpression("DAY(u.date)", 'hour');
++    } elseif ($database_type == 'sqlite') {
++      $query->addExpression("strftime('%d', u.date)", 'hour');
++    }
++    else {
++      throw new \Exception('Unsupported database type.');
++    }
+     $query->addExpression('COUNT(DISTINCT u.uid)', 'count');
+ 
+     if ($lp_id) {
