@@ -1,0 +1,10 @@
+version: "3.7"
+services:
+
+  alpine:
+    image: opigno/cli:3.1.1
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    ports:
+      - "8888:8888"

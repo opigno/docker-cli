@@ -1,0 +1,15 @@
+version: "3.7"
+services:
+
+  alpine:
+    volumes:
+      - app:/app
+
+volumes:
+  app:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      # Create the empty directory before mount: mkdir -p ./app
+      device: './app'

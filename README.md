@@ -23,6 +23,8 @@ services:
     command: php -S 0.0.0.0:8888 .ht.router.php
     ports:
       - "8888:8888"
+```
+
 ### Configuration & Environment Variables
  - Note: The image is not recommended for production.
  - The settings.php file is included with default values. It's not designed for overrides in the current version.
@@ -30,7 +32,7 @@ services:
 
 ### Interaction with the Running Container
 You can access and interact with the running container using the following command:
-```
+```bash
 docker exec -it <container_name> sh
 ```
 
