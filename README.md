@@ -41,4 +41,4 @@ This image is intended for testing and is not recommended for production environ
 
 ### Support & Contact
 For any questions, issues, or concerns, please contact the author at:
-E-mail: yboichenko@connect-i.ch
+E-mail: support@opigno.org
